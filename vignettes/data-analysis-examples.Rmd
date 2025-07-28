@@ -1,0 +1,255 @@
+---
+  title: "Data Analysis Examples with readihme"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Data Analysis Examples with readihme}
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteEncoding{UTF-8}
+---
+
+  ```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(readihme)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+## Example 1: Tracking Progress Toward SDG Targets
+
+This example shows how to track progress on health-related SDG indicators over time:
+
+  ```{r sdg_progress}
+# Get maternal mortality data for selected countries
+countries <- find_countries("(Brazil|India|Nigeria|Bangladesh)")
+country_ids <- countries$location_id
+
+# Find maternal mortality indicator
+indicators <- get_indicators()
+maternal_indicators <- indicators %>%
+  filter(grepl("maternal|mortality", indicator_name, ignore.case = TRUE))
+
+# Get data from 2000 to 2020
+maternal_data <- get_sdg_data(
+  indicator_ids = maternal_indicators$indicator_id[1],
+  location_ids = country_ids,
+  years = seq(2000, 2020, 5)
+)
+
+# Merge with country names and visualize
+maternal_progress <- maternal_data %>%
+  left_join(countries, by = "location_id") %>%
+  ggplot(aes(x = year, y = value, color = location_name)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(
+    title = "Maternal Mortality Trends",
+    subtitle = "Progress toward SDG Target 3.1",
+    x = "Year",
+    y = "Maternal Mortality Ratio",
+    color = "Country"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+print(maternal_progress)
+```
+
+## Example 2: Regional Comparisons
+
+Compare health indicators across different regions:
+
+  ```{r regional_comparison}
+# Get regional data (sub-Saharan Africa vs. other regions)
+africa_countries <- find_countries("Africa") %>%
+  filter(grepl("Sub-Saharan", location_name))
+
+other_regions <- get_locations() %>%
+  filter(grepl("Region|World", location_name)) %>%
+  slice_head(n = 3)
+
+all_locations <- bind_rows(africa_countries, other_regions)
+
+# Get under-5 mortality data
+child_mortality_data <- get_sdg_data(
+  indicator_ids = 2,  # Assume this is under-5 mortality
+  location_ids = all_locations$location_id,
+  years = c(2000, 2010, 2020)
+)
+
+# Create comparison chart
+regional_comparison <- child_mortality_data %>%
+  left_join(all_locations, by = "location_id") %>%
+  mutate(
+    region_type = ifelse(grepl("Africa", location_name),
+                         "Sub-Saharan Africa", "Other Regions")
+  ) %>%
+  ggplot(aes(x = year, y = value, color = location_name)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~region_type, scales = "free_y") +
+  labs(
+    title = "Under-5 Mortality by Region",
+    x = "Year",
+    y = "Deaths per 1,000 live births",
+    color = "Location"
+  ) +
+  theme_minimal()
+
+print(regional_comparison)
+```
+
+## Example 3: Gender Analysis
+
+Analyze gender differences in health outcomes:
+
+  ```{r gender_analysis}
+# Get life expectancy data by sex
+life_exp_data <- get_results_by_indicator(
+  indicator_id = 3,  # Assume this is life expectancy
+  location_id = c(102, 6, 101, 135),  # USA, China, India, Brazil
+  year = 2020,
+  sex_id = c(1, 2)  # Male and Female
+)
+
+# Get sex categories for merging
+sex_categories <- get_sex_categories()
+countries <- get_locations() %>%
+  filter(location_id %in% c(102, 6, 101, 135))
+
+# Create gender comparison
+gender_comparison <- life_exp_data %>%
+  left_join(sex_categories, by = "sex_id") %>%
+  left_join(countries, by = "location_id") %>%
+  filter(sex_name %in% c("Male", "Female")) %>%
+  ggplot(aes(x = location_name, y = value, fill = sex_name)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Life Expectancy by Gender (2020)",
+    x = "Country",
+    y = "Life Expectancy (years)",
+    fill = "Sex"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(gender_comparison)
+```
+
+## Example 4: Age-Specific Analysis
+
+Examine how health indicators vary by age group:
+
+  ```{r age_analysis}
+# Get mortality data by age group
+age_specific_data <- get_results_by_location(
+  location_id = 102,  # USA
+  year = 2020,
+  indicator_id = 4,   # Assume this is age-specific mortality
+  age_group_id = c(1:10)  # Multiple age groups
+)
+
+# Get age group categories
+age_groups <- get_age_groups()
+
+# Visualize age patterns
+age_pattern <- age_specific_data %>%
+  left_join(age_groups, by = "age_group_id") %>%
+  ggplot(aes(x = reorder(age_group_name, age_group_id), y = value)) +
+  geom_col(fill = "steelblue") +
+  labs(
+    title = "Mortality Rates by Age Group (USA, 2020)",
+    x = "Age Group",
+    y = "Mortality Rate"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(age_pattern)
+```
+
+## Example 5: Projection Analysis
+
+Compare current data with future projections:
+
+  ```{r projection_analysis}
+# Get current and projected data
+projection_data <- get_sdg_data(
+  indicator_ids = 1,
+  location_ids = c(102, 6),  # USA and China
+  years = c(2020, 2025, 2030)
+)
+
+# Get scenario information
+scenarios <- get_scenarios()
+
+# Visualize projections
+projection_plot <- projection_data %>%
+  left_join(get_locations(), by = "location_id") %>%
+  mutate(
+    data_type = ifelse(year <= 2020, "Historical", "Projection")
+  ) %>%
+  ggplot(aes(x = year, y = value, color = location_name)) +
+  geom_line(aes(linetype = data_type), size = 1.2) +
+  geom_point(size = 2) +
+  scale_linetype_manual(values = c("Historical" = "solid", "Projection" = "dashed")) +
+  labs(
+    title = "Health Indicator: Historical Data and Projections",
+    x = "Year",
+    y = "Indicator Value",
+    color = "Country",
+    linetype = "Data Type"
+  ) +
+  theme_minimal()
+
+print(projection_plot)
+```
+
+## Example 6: Multi-Indicator Dashboard
+
+Create a comprehensive health dashboard:
+
+  ```{r dashboard}
+# Get multiple indicators for a single country
+dashboard_data <- get_results_by_location(
+  location_id = 102,  # USA
+  year = 2020,
+  indicator_id = c(1, 2, 3, 4, 5)  # Multiple health indicators
+)
+
+# Get indicator names
+indicators_info <- get_indicators()
+
+# Create faceted dashboard
+health_dashboard <- dashboard_data %>%
+  left_join(indicators_info, by = "indicator_id") %>%
+  ggplot(aes(x = indicator_name, y = value)) +
+  geom_col(fill = "darkgreen", alpha = 0.7) +
+  labs(
+    title = "Health Indicators Dashboard (USA, 2020)",
+    x = "Indicator",
+    y = "Value"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(health_dashboard)
+```
+
+## Tips for Analysis
+
+1. **Always join with metadata**: Link your data with location names, indicator descriptions, etc.
+2. **Handle missing data**: Use `na.omit()` or appropriate handling for missing values
+3. **Consider scales**: Different indicators have different units and scales
+4. **Use appropriate visualizations**: Time series for trends, bar charts for comparisons
+5. **Document your analysis**: Include indicator definitions and data sources in reports
+Improve

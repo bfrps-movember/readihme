@@ -1,0 +1,260 @@
+---
+title: "Introduction to readihme"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to readihme}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(readihme)
+library(dplyr)
+library(ggplot2)
+```
+
+## Overview
+
+The `readihme` package provides easy access to the Institute for Health Metrics and Evaluation (IHME) Sustainable Development Goals (SDG) API. This package allows you to:
+
+- Retrieve SDG indicator data for health-related goals
+- Access metadata about countries, indicators, and targets
+- Download time series data from 1990-2030 (including projections)
+- Perform demographic-specific analyses (by age group, sex)
+
+## Authentication Setup
+
+**Important:** The IHME API requires authentication. You must set up an API key before using any data retrieval functions.
+
+### Step 1: Get Your API Key
+
+1. Visit [https://api.healthdata.org/sdg/v1/](https://api.healthdata.org/sdg/v1/)
+2. Sign up or log in to get your API key
+3. Copy your API key (it will look like: `xq541ghh07ihok3tbtff4g4c3p4z7a52`)
+
+### Step 2: Set Your API Key
+
+```{r authentication}
+# Set your API key for the current R session
+set_ihme_key("your_api_key_here")
+
+# Or set it and save for future sessions (recommended)
+set_ihme_key("your_api_key_here", install = TRUE)
+
+# Verify your key is working
+validate_ihme_key()
+
+# Check if you have a key set
+has_ihme_key()
+```
+
+### Authentication Management
+
+```{r auth_management}
+# Get your current key (returns NULL if not set)
+current_key <- get_ihme_key(error_if_missing = FALSE)
+
+# Remove your key from current session
+remove_ihme_key()
+
+# Remove key from current session and .Renviron file
+remove_ihme_key(uninstall = TRUE)
+```
+
+**Note:** If you set `install = TRUE`, your API key will be saved to your `.Renviron` file and automatically loaded in future R sessions. Remember to restart R after installation.
+
+## Getting Started
+
+### Basic Metadata Retrieval
+
+Once your API key is set, start by exploring what data is available:
+
+```{r metadata}
+# Get all available locations (countries and regions)
+locations <- get_locations()
+head(locations)
+
+# Get all SDG indicators
+indicators <- get_indicators()
+head(indicators)
+
+# Get all SDG targets and goals
+targets <- get_targets()
+goals <- get_goals()
+```
+
+### Finding Specific Data
+
+Use helper functions to find what you're looking for:
+
+```{r finding}
+# Find countries by name pattern
+us_locations <- find_countries("United States")
+print(us_locations)
+
+# Find all African countries
+african_countries <- find_countries("Africa")
+print(nrow(african_countries))
+
+# Create a simple lookup table
+location_lookup <- create_location_lookup()
+head(location_lookup)
+```
+
+### Retrieving Indicator Data
+
+Once you know what indicators and locations you want, retrieve the data:
+
+```{r data_retrieval}
+# Get data for specific indicators and countries
+health_data <- get_sdg_data(
+  indicator_ids = c(1, 2),  # Replace with actual indicator IDs
+  location_ids = c(102),    # USA location ID
+  years = c(2015, 2020, 2025)
+)
+
+head(health_data)
+```
+
+## Different Ways to Query Data
+
+The package offers several approaches to retrieve data:
+
+### By Year
+```{r by_year}
+# Get all available data for a specific year
+data_2020 <- get_results_by_year(
+  year = 2020,
+  location_id = c(102, 6),  # USA and China
+  indicator_id = c(1, 2)
+)
+```
+
+### By Location
+```{r by_location}
+# Get all data for a specific country
+usa_data <- get_results_by_location(
+  location_id = 102,  # USA
+  year = c(2015, 2020, 2025)
+)
+```
+
+### By Indicator
+```{r by_indicator}
+# Get data for a specific indicator across multiple countries
+indicator_data <- get_results_by_indicator(
+  indicator_id = 1,
+  location_id = c(102, 6, 101),  # Multiple countries
+  year = c(2020, 2025)
+)
+```
+
+### By Target
+```{r by_target}
+# Get data for a specific SDG target
+target_data <- get_results_by_target(
+  target_id = 1,
+  location_id = c(102, 6),
+  year = c(2020, 2025)
+)
+```
+
+## Working with Demographics
+
+Many indicators provide data broken down by age group and sex:
+
+```{r demographics}
+# Get age groups and sex categories
+age_groups <- get_age_groups()
+sex_categories <- get_sex_categories()
+
+# Retrieve data for specific demographic groups
+demographic_data <- get_results_by_indicator(
+  indicator_id = 1,
+  location_id = 102,
+  year = 2020,
+  sex_id = c(1, 2),  # Both sexes, Male
+  age_group_id = c(1, 2, 3)  # Specific age groups
+)
+```
+
+## Bulk Operations
+
+For research projects requiring extensive data:
+
+```{r bulk}
+# Download all metadata once (requires API key)
+metadata <- download_all_ihme_metadata(file = "my_ihme_metadata.rds")
+
+# Access specific components
+all_indicators <- metadata$indicators
+all_locations <- metadata$locations
+
+# Or use convenience functions
+all_indicators_direct <- get_all_indicators()
+all_locations_direct <- get_all_locations()
+
+# For very large data requests, use batch downloading
+large_dataset <- batch_download_sdg_data(
+  indicator_ids = 1:10,
+  location_ids = c(102, 6, 101),
+  years = c(2015, 2020, 2025),
+  batch_size = 3,  # Process 3 indicators at a time
+  delay_between_batches = 2  # Wait 2 seconds between batches
+)
+```
+
+## Troubleshooting Authentication
+
+If you encounter authentication errors:
+
+```{r troubleshooting}
+# Check if your key is set
+if (!has_ihme_key()) {
+  message("No API key found. Please set one using set_ihme_key()")
+}
+
+# Test if your key is valid
+if (!validate_ihme_key()) {
+  message("API key is invalid. Please check your key and set a new one.")
+}
+
+# If you get 401/403 errors, your key may be expired
+# Get a new key from: https://api.healthdata.org/sdg/v1/
+```
+
+## Best Practices
+
+1. **Set up authentication first**: Always set your API key before attempting data retrieval
+2. **Start small**: Begin with limited parameters to understand the data structure
+3. **Use filters**: Always specify location_id, year, and indicator_id to reduce response sizes
+4. **Cache metadata**: Use `download_all_ihme_metadata()` for repeated analysis
+5. **Be mindful of API limits**: Use batch functions for large requests
+6. **Check data structure**: Use `str()` and `head()` to understand returned data
+
+```{r best_practices}
+# Good: Specific and limited request
+small_request <- get_results_by_year(
+  year = 2020,
+  location_id = 102,
+  indicator_id = 1
+)
+
+# Less ideal: Too broad, may return huge dataset
+# large_request <- get_results_by_year(year = 2020)  # Don't do this!
+```
+
+## Next Steps
+
+- Explore the **Data Analysis Examples** vignette for detailed analysis workflows
+- Check out specific health indicators relevant to your research
+- Use the helper functions to discover available data before making large requests
+- Consider setting up `.Renviron` with your API key for convenient access across sessions

@@ -1,0 +1,178 @@
+---
+  output: github_document
+---
+
+  <!-- README.md is generated from README.Rmd. Please edit that file -->
+
+  ```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%",
+  eval = FALSE
+)
+```
+
+# readihme
+
+---
+  output: github_document
+---
+
+  <!-- README.md is generated from README.Rmd. Please edit that file -->
+
+  ```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%",
+  eval = FALSE
+)
+```
+
+# readihme
+<!-- badges: start -->
+  [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+  [![CRAN status](https://www.r-pkg.org/badges/version/readihme)](https://CRAN.R-project.org/package=readihme)
+  [![R-CMD-check](https://github.com/yourusername/readihme/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/yourusername/readihme/actions/workflows/R-CMD-check.yaml)
+  [![Codecov test coverage](https://codecov.io/gh/yourusername/readihme/graph/badge.svg)](https://app.codecov.io/gh/yourusername/readihme)
+<!-- badges: end -->
+
+The purpose of `readihme` is to provide easy access to the Institute for Health Metrics and Evaluation (IHME) Sustainable Development Goals (SDG) API directly from R. This package allows users to retrieve SDG indicator data, metadata, and perform common data analysis tasks with IHME data.
+
+For details about the IHME data and methodology, see the [IHME website](https://www.healthdata.org/). The API documentation is available at [https://api.healthdata.org/sdg/v1/](https://api.healthdata.org/sdg/v1/).
+
+## Installation
+
+You can install the development version of readihme like so:
+
+  ``` r
+# install.packages("pak")
+pak::pkg_install("yourusername/readihme")
+```
+
+## Quick Start
+
+```{r example}
+library(readihme)
+library(dplyr)
+library(ggplot2)
+
+# Get available countries
+locations <- get_locations()
+head(locations)
+
+# Find specific countries
+us_countries <- find_countries("United States")
+print(us_countries)
+
+# Get all SDG indicators
+indicators <- get_indicators()
+head(indicators)
+
+# Get health data for specific countries and years
+health_data <- get_sdg_data(
+  indicator_ids = c(1, 2),  # Replace with actual indicator IDs
+  location_ids = c(102, 6), # USA and China location IDs
+  years = c(2015, 2020, 2025)
+)
+
+head(health_data)
+```
+
+## Example: Child Mortality Trends
+
+This example shows how to analyze child mortality trends across different countries:
+
+  ```{r child-mortality-example}
+library(readihme)
+library(dplyr)
+library(ggplot2)
+
+# Find child mortality indicators
+indicators <- get_indicators()
+child_indicators <- indicators %>%
+  filter(grepl("child|mortality|under.*5", indicator_name, ignore.case = TRUE))
+
+# Get data for selected countries
+selected_countries <- find_countries("(Brazil|India|Nigeria|China)")
+country_ids <- selected_countries$location_id
+
+# Get child mortality data
+mortality_data <- get_sdg_data(
+  indicator_ids = child_indicators$indicator_id[1], # Use first child mortality indicator
+  location_ids = country_ids,
+  years = seq(2000, 2020, 5)  # Every 5 years
+)
+
+# Create visualization
+mortality_plot <- mortality_data %>%
+  left_join(selected_countries, by = "location_id") %>%
+  ggplot(aes(x = year, y = value, color = location_name)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(
+    title = "Child Mortality Trends",
+    subtitle = "Deaths per 1,000 live births",
+    x = "Year",
+    y = "Mortality Rate",
+    color = "Country"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+print(mortality_plot)
+```
+
+## Key Features
+
+- **Complete API Coverage**: Access all IHME SDG API endpoints
+- **Flexible Querying**: Multiple ways to retrieve data (by year, location, indicator, target)
+- **Bulk Operations**: Download large datasets efficiently with batching
+- **Smart Caching**: Automatic caching of metadata to improve performance
+- **Search Functions**: Easy country/location search with pattern matching
+- **Data Cleaning**: Automatic tidying of API responses into clean data frames
+- **Comprehensive Documentation**: Examples, vignettes, and detailed function documentation
+
+## Main Functions
+
+### Metadata Functions
+- `get_locations()` - Countries and regions
+- `get_indicators()` - Available SDG indicators
+- `get_targets()` - SDG targets
+- `get_goals()` - SDG goals
+- `get_age_groups()` - Age group categories
+- `get_sex_categories()` - Sex categories (Both, Male, Female)
+- `get_scenarios()` - Projection scenarios
+
+### Data Retrieval Functions
+- `get_sdg_data()` - High-level function for multiple indicators/countries
+- `get_results_by_year()` - Data for specific years
+- `get_results_by_location()` - Data for specific countries
+- `get_results_by_indicator()` - Data for specific indicators
+- `get_results_by_target()` - Data for specific SDG targets
+
+### Utility Functions
+- `find_countries()` - Search countries by name pattern
+- `download_all_ihme_metadata()` - Bulk metadata download with caching
+- `batch_download_sdg_data()` - Download large datasets in batches
+- `create_location_lookup()` - Simple country lookup table
+
+## Getting Help
+
+- Check out the [Getting Started vignette](articles/introduction.html) for detailed examples
+- See the [Data Analysis Examples vignette](articles/data-analysis-examples.html) for advanced use cases
+- Browse the [function reference](reference/index.html) for complete documentation
+- Report bugs or request features at [GitHub Issues](https://github.com/yourusername/readihme/issues)
+
+## Related Resources
+
+- [IHME Website](https://www.healthdata.org/)
+- [IHME SDG API Documentation](https://api.healthdata.org/sdg/v1/)
+- [UN Sustainable Development Goals](https://sdgs.un.org/goals)
+
+## License
+
+MIT © readihme authors
