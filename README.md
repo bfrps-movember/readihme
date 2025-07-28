@@ -2,7 +2,7 @@
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![R-CMD-check](https://github.com/yourusername/readihme/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/yourusername/readihme/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/bfiripis/readihme/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/bfiripis/readihme/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The purpose of `readihme` is to provide easy access to the Institute for Health Metrics and Evaluation (IHME) Sustainable Development Goals (SDG) API directly from R. This package allows users to retrieve SDG indicator data, metadata, and perform common data analysis tasks with IHME data.
