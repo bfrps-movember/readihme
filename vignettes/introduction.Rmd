@@ -191,14 +191,24 @@ demographic_data <- get_results_by_indicator(
 For research projects requiring extensive data:
 
 ```{r bulk}
-# Download all metadata once (requires API key)
+# Download all metadata only (faster, smaller files)
 metadata <- download_all_ihme_metadata(file = "my_ihme_metadata.rds")
 
 # Access specific components
 all_indicators <- metadata$indicators
 all_locations <- metadata$locations
 
-# Or use convenience functions
+# Download both metadata AND all SDG data (comprehensive dataset)
+complete_data <- download_all_ihme_data(
+  file = "complete_ihme_data.rds",
+  years = c(2015, 2020, 2025)  # Specify years to include
+)
+
+# Access both metadata and data from complete download
+all_metadata <- complete_data$metadata
+all_sdg_data <- complete_data$sdg_data
+
+# Or use convenience functions for direct access
 all_indicators_direct <- get_all_indicators()
 all_locations_direct <- get_all_locations()
 
@@ -209,6 +219,14 @@ large_dataset <- batch_download_sdg_data(
   years = c(2015, 2020, 2025),
   batch_size = 3,  # Process 3 indicators at a time
   delay_between_batches = 2  # Wait 2 seconds between batches
+)
+
+# Download subset of data (more efficient for targeted analysis)
+subset_data <- download_ihme_data_subset(
+  indicator_ids = c(1, 2, 3),
+  location_ids = c(102, 6),  # USA and China
+  years = c(2020, 2025),
+  file = "targeted_data.rds"
 )
 ```
 

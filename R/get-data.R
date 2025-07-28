@@ -195,6 +195,8 @@ get_sdg_data <- function(indicator_ids, location_ids, years, sex_id = NULL,
 #'
 #' Downloads and caches all available metadata from the IHME API including
 #' locations, indicators, targets, goals, age groups, sex categories, and scenarios.
+#' This function downloads ONLY metadata, not the actual SDG indicator data.
+#' Use download_all_ihme_data() to get both metadata and indicator data.
 #'
 #' @param file Path to save data (default: "ihme_metadata.rds")
 #' @param force Force redownload, even if file exists and is current (default: FALSE)
@@ -219,6 +221,8 @@ get_sdg_data <- function(indicator_ids, location_ids, years, sex_id = NULL,
 #'
 #' # Force fresh download
 #' metadata <- download_all_ihme_metadata(force = TRUE)
+#'
+#' @seealso download_all_ihme_data() to download both metadata and SDG indicator data
 download_all_ihme_metadata <- function(file = "ihme_metadata.rds", force = FALSE) {
 
   # Check for API key before proceeding

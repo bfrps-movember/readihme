@@ -1,13 +1,13 @@
 ---
-  title: "Data Analysis Examples with readihme"
+title: "Data Analysis Examples with readihme"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Data Analysis Examples with readihme}
-%\VignetteEngine{knitr::rmarkdown}
-%\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-  ```{r, include = FALSE}
+```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -22,13 +22,46 @@ library(readihme)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+
+# Set your API key first
+set_ihme_key("your_api_key_here")
+```
+
+## Overview
+
+This vignette demonstrates advanced data analysis workflows using the readihme package. These examples show how to work with IHME SDG data for various research and analysis purposes.
+
+## Data Download Options
+
+Before diving into analysis, it's helpful to understand the different ways to download IHME data:
+
+```{r download_options}
+# Option 1: Download only metadata (fast, small files)
+metadata_only <- download_all_ihme_metadata("metadata.rds")
+
+# Option 2: Download complete dataset (metadata + all SDG data)
+complete_dataset <- download_all_ihme_data(
+  file = "complete_ihme.rds",
+  years = c(2015, 2020, 2025),  # Specify years to reduce size
+  batch_size = 3  # Smaller batches for better API performance
+)
+
+# Option 3: Download targeted subset (most efficient for specific research)
+targeted_data <- download_ihme_data_subset(
+  indicator_ids = c(1, 2, 3),  # Specific indicators only
+  location_ids = c(102, 6, 101),  # USA, China, India
+  years = c(2020, 2025),
+  file = "research_subset.rds"
+)
+
+# For the examples below, we'll use targeted downloads to be more efficient
 ```
 
 ## Example 1: Tracking Progress Toward SDG Targets
 
 This example shows how to track progress on health-related SDG indicators over time:
 
-  ```{r sdg_progress}
+```{r sdg_progress}
 # Get maternal mortality data for selected countries
 countries <- find_countries("(Brazil|India|Nigeria|Bangladesh)")
 country_ids <- countries$location_id
@@ -64,11 +97,34 @@ maternal_progress <- maternal_data %>%
 print(maternal_progress)
 ```
 
-## Example 2: Regional Comparisons
+## Example 2: Working with Complete Downloaded Dataset
+
+When you have downloaded a complete dataset, you can perform comprehensive analyses:
+
+```{r complete_dataset_analysis}
+# If you've downloaded complete data
+# complete_data <- readRDS("complete_ihme.rds")
+
+# Extract components
+# sdg_data <- complete_data$sdg_data
+# metadata <- complete_data$metadata
+
+# Example: Compare all available indicators for two countries
+# usa_vs_china <- sdg_data %>%
+#   filter(location_id %in% c(102, 6), year == 2020) %>%
+#   left_join(metadata$locations, by = "location_id") %>%
+#   left_join(metadata$indicators, by = "indicator_id") %>%
+#   select(location_name, indicator_name, value) %>%
+#   pivot_wider(names_from = location_name, values_from = value)
+
+# print(head(usa_vs_china))
+```
+
+## Example 3: Regional Comparisons
 
 Compare health indicators across different regions:
 
-  ```{r regional_comparison}
+```{r regional_comparison}
 # Get regional data (sub-Saharan Africa vs. other regions)
 africa_countries <- find_countries("Africa") %>%
   filter(grepl("Sub-Saharan", location_name))
@@ -108,11 +164,11 @@ regional_comparison <- child_mortality_data %>%
 print(regional_comparison)
 ```
 
-## Example 3: Gender Analysis
+## Example 4: Gender Analysis
 
 Analyze gender differences in health outcomes:
 
-  ```{r gender_analysis}
+```{r gender_analysis}
 # Get life expectancy data by sex
 life_exp_data <- get_results_by_indicator(
   indicator_id = 3,  # Assume this is life expectancy
@@ -145,11 +201,11 @@ gender_comparison <- life_exp_data %>%
 print(gender_comparison)
 ```
 
-## Example 4: Age-Specific Analysis
+## Example 5: Age-Specific Analysis
 
 Examine how health indicators vary by age group:
 
-  ```{r age_analysis}
+```{r age_analysis}
 # Get mortality data by age group
 age_specific_data <- get_results_by_location(
   location_id = 102,  # USA
@@ -177,11 +233,11 @@ age_pattern <- age_specific_data %>%
 print(age_pattern)
 ```
 
-## Example 5: Projection Analysis
+## Example 6: Projection Analysis
 
 Compare current data with future projections:
 
-  ```{r projection_analysis}
+```{r projection_analysis}
 # Get current and projected data
 projection_data <- get_sdg_data(
   indicator_ids = 1,
@@ -214,11 +270,11 @@ projection_plot <- projection_data %>%
 print(projection_plot)
 ```
 
-## Example 6: Multi-Indicator Dashboard
+## Example 7: Multi-Indicator Dashboard
 
 Create a comprehensive health dashboard:
 
-  ```{r dashboard}
+```{r dashboard}
 # Get multiple indicators for a single country
 dashboard_data <- get_results_by_location(
   location_id = 102,  # USA
@@ -245,6 +301,100 @@ health_dashboard <- dashboard_data %>%
 print(health_dashboard)
 ```
 
+## Example 8: Efficient Batch Analysis
+
+For large-scale analysis projects:
+
+```{r batch_analysis}
+# Define research parameters
+research_countries <- c(102, 6, 101, 135, 95)  # Major economies
+research_indicators <- c(1, 2, 3, 4, 5)  # Key health indicators
+research_years <- c(2015, 2020, 2025)
+
+# Use batch download for efficient data retrieval
+research_data <- batch_download_sdg_data(
+  indicator_ids = research_indicators,
+  location_ids = research_countries,
+  years = research_years,
+  batch_size = 2,  # Smaller batches for API politeness
+  delay_between_batches = 2
+)
+
+# Or use the targeted subset function
+# research_data <- download_ihme_data_subset(
+#   indicator_ids = research_indicators,
+#   location_ids = research_countries,
+#   years = research_years,
+#   file = "research_project.rds"
+# )
+
+# Create summary statistics
+summary_stats <- research_data %>%
+  group_by(indicator_id, year) %>%
+  summarise(
+    mean_value = mean(value, na.rm = TRUE),
+    median_value = median(value, na.rm = TRUE),
+    min_value = min(value, na.rm = TRUE),
+    max_value = max(value, na.rm = TRUE),
+    countries_with_data = n(),
+    .groups = "drop"
+  )
+
+print(summary_stats)
+```
+
+## Data Management Tips
+
+### Working with Large Datasets
+
+```{r data_management}
+# Check size of downloaded data
+# file_size <- file.size("complete_ihme.rds")
+# cat("Dataset size:", round(file_size / 1024^2, 1), "MB\n")
+
+# Load only specific components when needed
+# load_metadata_only <- function(file) {
+#   data <- readRDS(file)
+#   return(data$metadata)
+# }
+
+# Save processed results
+# processed_data <- research_data %>%
+#   filter(year >= 2015) %>%
+#   group_by(location_id, indicator_id) %>%
+#   arrange(year) %>%
+#   mutate(
+#     trend = value - lag(value),
+#     pct_change = (value - lag(value)) / lag(value) * 100
+#   )
+
+# saveRDS(processed_data, "processed_trends.rds")
+```
+
+### Combining Multiple Datasets
+
+```{r combining_datasets}
+# Example: Combine different time periods
+# historical_data <- download_ihme_data_subset(
+#   indicator_ids = c(1, 2),
+#   location_ids = c(102, 6),
+#   years = c(2000, 2005, 2010, 2015),
+#   file = "historical.rds"
+# )
+
+# recent_data <- download_ihme_data_subset(
+#   indicator_ids = c(1, 2),
+#   location_ids = c(102, 6),
+#   years = c(2020, 2025, 2030),
+#   file = "recent.rds"
+# )
+
+# combined_analysis <- bind_rows(
+#   historical_data$sdg_data %>% mutate(period = "Historical"),
+#   recent_data$sdg_data %>% mutate(period = "Recent/Projected")
+# )
+```
+
 ## Tips for Analysis
 
 1. **Always join with metadata**: Link your data with location names, indicator descriptions, etc.
@@ -252,4 +402,6 @@ print(health_dashboard)
 3. **Consider scales**: Different indicators have different units and scales
 4. **Use appropriate visualizations**: Time series for trends, bar charts for comparisons
 5. **Document your analysis**: Include indicator definitions and data sources in reports
-Improve
+6. **Efficient downloads**: Use targeted downloads for specific research questions
+7. **Batch processing**: Use batch functions for large datasets to respect API limits
+8. **Cache results**: Save processed data to avoid re-downloading

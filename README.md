@@ -13,7 +13,7 @@ You can install the development version of readihme like so:
 
 ``` r
 # install.packages("pak")
-pak::pkg_install("yourusername/readihme")
+pak::pkg_install("bfiripis/readihme")
 ```
 
 ## Authentication
