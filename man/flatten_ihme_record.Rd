@@ -13,6 +13,6 @@ flatten_ihme_record(record)
 Flattened list
 }
 \description{
-Internal function to flatten nested IHME records properly.
+Internal function to flatten nested IHME records.
 }
 \keyword{internal}

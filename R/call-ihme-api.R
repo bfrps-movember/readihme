@@ -9,28 +9,45 @@
 #' @examplesIf interactive() && curl::has_internet()
 #' call_ihme_api("GetLocation")
 call_ihme_api <- function(api_url, ...) {
-  # Check for API key
   api_key <- get_ihme_key(error_if_missing = TRUE)
+  base_url <- paste0(get_base_url(), api_url)
 
-  # Create the base request
-  req <- httr2::request(paste0(get_base_url(), api_url))
-
-  # Add authorization header
-  req <- httr2::req_headers(req, Authorization = api_key)
-
-  # Add query parameters if provided
   params <- list(...)
   if (length(params) > 0) {
-    # Remove NULL parameters
     params <- params[!sapply(params, is.null)]
 
-    # Only add query parameters if we have any non-NULL ones
     if (length(params) > 0) {
-      req <- httr2::req_url_query(req, !!!params)
+      query_parts <- character(0)
+
+      for (param_name in names(params)) {
+        param_value <- params[[param_name]]
+
+        if (length(param_value) > 1) {
+          # Handle array parameters - IHME API expects repeated parameter names
+          for (value in param_value) {
+            query_parts <- c(query_parts, paste0(param_name, "=", utils::URLencode(as.character(value))))
+          }
+        } else if (length(param_value) == 1) {
+          query_parts <- c(query_parts, paste0(param_name, "=", utils::URLencode(as.character(param_value))))
+        }
+      }
+
+      if (length(query_parts) > 0) {
+        query_string <- paste(query_parts, collapse = "&")
+        full_url <- paste0(base_url, "?", query_string)
+      } else {
+        full_url <- base_url
+      }
+    } else {
+      full_url <- base_url
     }
+  } else {
+    full_url <- base_url
   }
 
-  # Perform the request with enhanced error handling
+  req <- httr2::request(full_url)
+  req <- httr2::req_headers(req, Authorization = api_key)
+
   tryCatch({
     resp <- httr2::req_perform(req)
     httr2::resp_check_status(resp)
@@ -43,7 +60,7 @@ call_ihme_api <- function(api_url, ...) {
     } else if (grepl("500|502|503", e$message)) {
       stop("IHME server error. Please try again later.", call. = FALSE)
     } else {
-      stop(paste("API request failed:", e$message), call. = FALSE)
+      stop(e$message, call. = FALSE)
     }
   })
 }

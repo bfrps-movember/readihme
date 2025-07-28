@@ -13,6 +13,6 @@ clean_ihme_columns(df)
 Data frame with cleaned column names
 }
 \description{
-Internal function to clean up messy column names from IHME API responses.
+Clean IHME Column Names
 }
 \keyword{internal}

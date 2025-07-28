@@ -12,29 +12,15 @@ download_all_ihme_metadata(file = "ihme_metadata.rds", force = FALSE)
 \item{force}{Force redownload, even if file exists and is current (default: FALSE)}
 }
 \value{
-List containing all IHME metadata with elements:
-\itemize{
-\item age_groups - Available age group categories
-\item goals - SDG goals
-\item indicators - All available indicators
-\item locations - Countries and regions
-\item scenarios - Projection scenarios
-\item sex_categories - Sex categories (Both, Male, Female)
-\item targets - SDG targets
-\item downloaded - Timestamp of download
-\item version_hash - Hash for cache validation
-}
+List containing all IHME metadata
 }
 \description{
-Downloads and caches all available metadata from the IHME API including
-locations, indicators, targets, goals, age groups, sex categories, and scenarios.
+Downloads and caches all available metadata from the IHME API.
+Downloads ONLY metadata, not actual SDG indicator data.
 }
 \examples{
 \dontshow{if (interactive() && curl::has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-# Download all metadata to default file
 metadata <- download_all_ihme_metadata()
-
-# Force fresh download
 metadata <- download_all_ihme_metadata(force = TRUE)
 \dontshow{\}) # examplesIf}
 }

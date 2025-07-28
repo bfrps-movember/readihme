@@ -15,7 +15,7 @@ find_countries(pattern, ignore_case = TRUE)
 Data frame of matching locations
 }
 \description{
-Search for countries/locations that match a given text pattern.
+Find Countries by Name Pattern
 }
 \examples{
 \dontshow{if (interactive() && curl::has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}

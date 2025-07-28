@@ -13,6 +13,6 @@ validate_years(years)
 Logical indicating if all years are valid
 }
 \description{
-Internal function to validate that years are within the acceptable range.
+Validate Year Range
 }
 \keyword{internal}

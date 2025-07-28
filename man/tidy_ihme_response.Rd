@@ -14,5 +14,4 @@ Tidied data frame
 }
 \description{
 Converts raw JSON responses from the IHME API into clean data frames.
-This function is specifically designed to handle the IHME API's data structure.
 }

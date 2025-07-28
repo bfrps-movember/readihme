@@ -10,7 +10,9 @@ get_sdg_data(
   years,
   sex_id = NULL,
   age_group_id = NULL,
-  scenario = NULL
+  scenario = NULL,
+  location_batch_size = 50,
+  delay_between_location_batches = 0.5
 )
 }
 \arguments{
@@ -25,14 +27,17 @@ get_sdg_data(
 \item{age_group_id}{Optional age group ID filter}
 
 \item{scenario}{Optional scenario filter}
+
+\item{location_batch_size}{Number of locations to process per batch (default: 50)}
+
+\item{delay_between_location_batches}{Delay in seconds between location batches (default: 0.5)}
 }
 \value{
 Combined data frame with results
 }
 \description{
-This is a convenience function that retrieves data for multiple indicators,
-countries, and years in a single call. It handles the API requests internally
-and combines the results.
+Convenience function that retrieves data for multiple indicators, countries,
+and years in a single call. Handles API requests internally and combines results.
 }
 \examples{
 \dontshow{if (interactive() && curl::has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}

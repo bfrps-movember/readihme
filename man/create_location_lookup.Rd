@@ -10,7 +10,7 @@ create_location_lookup()
 Data frame with location codes and names for easy lookup
 }
 \description{
-Creates a simplified lookup table with location IDs and names for easy reference.
+Create Location Lookup Table
 }
 \examples{
 \dontshow{if (interactive() && curl::has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}

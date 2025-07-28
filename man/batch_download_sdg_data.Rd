@@ -11,7 +11,9 @@ batch_download_sdg_data(
   batch_size = 5,
   delay_between_batches = 1,
   sex_id = NULL,
-  age_group_id = NULL
+  age_group_id = NULL,
+  location_batch_size = 50,
+  delay_between_location_batches = 0.5
 )
 }
 \arguments{
@@ -23,11 +25,15 @@ batch_download_sdg_data(
 
 \item{batch_size}{Number of indicators to process per batch (default: 5)}
 
-\item{delay_between_batches}{Delay in seconds between batches (default: 1)}
+\item{delay_between_batches}{Delay in seconds between indicator batches (default: 1)}
 
 \item{sex_id}{Optional sex ID filter}
 
 \item{age_group_id}{Optional age group ID filter}
+
+\item{location_batch_size}{Number of locations to process per batch (default: 50)}
+
+\item{delay_between_location_batches}{Delay in seconds between location batches (default: 0.5)}
 }
 \value{
 Combined data frame with all results
@@ -37,12 +43,9 @@ Download large amounts of SDG data in batches to avoid overwhelming the API.
 }
 \examples{
 \dontshow{if (interactive() && curl::has_internet()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-# Download data for many indicators in batches
 large_dataset <- batch_download_sdg_data(
-  indicator_ids = 1:20,
-  location_ids = c(102, 6, 101),
-  years = c(2020, 2021, 2022),
-  batch_size = 3
+  indicator_ids = 1:20, location_ids = c(102, 6, 101),
+  years = c(2020, 2021, 2022), batch_size = 3
 )
 \dontshow{\}) # examplesIf}
 }

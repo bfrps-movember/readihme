@@ -1,7 +1,6 @@
 #' Get Age Groups
 #'
 #' @param age_group_id Optional age group ID to filter results
-#'
 #' @return Data frame of age groups
 #' @export
 #'
@@ -20,7 +19,6 @@ get_age_groups <- function(age_group_id = NULL) {
 #' Get SDG Goals
 #'
 #' @param goal_id Optional vector of goal IDs to filter results
-#'
 #' @return Data frame of SDG goals
 #' @export
 #'
@@ -39,7 +37,6 @@ get_goals <- function(goal_id = NULL) {
 #' Get SDG Indicators
 #'
 #' @param indicator_id Optional indicator ID to filter results
-#'
 #' @return Data frame of indicators
 #' @export
 #'
@@ -58,7 +55,6 @@ get_indicators <- function(indicator_id = NULL) {
 #' Get Locations
 #'
 #' @param location_id Optional location ID to filter results
-#'
 #' @return Data frame of locations (countries, regions, etc.)
 #' @export
 #'
@@ -77,7 +73,6 @@ get_locations <- function(location_id = NULL) {
 #' Get Scenarios
 #'
 #' @param scenario Optional scenario to filter results
-#'
 #' @return Data frame of projection scenarios
 #' @export
 #'
@@ -96,7 +91,6 @@ get_scenarios <- function(scenario = NULL) {
 #' Get Sex Categories
 #'
 #' @param sex_id Optional sex ID to filter results
-#'
 #' @return Data frame of sex categories
 #' @export
 #'
@@ -115,7 +109,6 @@ get_sex_categories <- function(sex_id = NULL) {
 #' Get SDG Targets
 #'
 #' @param target_id Optional target ID to filter results
-#'
 #' @return Data frame of SDG targets
 #' @export
 #'

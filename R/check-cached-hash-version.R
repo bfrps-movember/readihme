@@ -28,7 +28,6 @@ check_cached_data <- function(file) {
 #' @export
 get_version_hash <- function() {
   tryCatch({
-    # Use existing functions to get counts as a proxy for data freshness
     location_count <- nrow(get_locations())
     indicator_count <- nrow(get_indicators())
     target_count <- nrow(get_targets())
@@ -41,7 +40,6 @@ get_version_hash <- function() {
     )
     digest::digest(metadata, algo = "md5")
   }, error = function(e) {
-    # Fallback to date-based versioning if API calls fail
     warning("Could not generate version hash, using date: ", e$message)
     digest::digest(Sys.Date(), algo = "md5")
   })

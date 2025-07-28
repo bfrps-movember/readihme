@@ -15,19 +15,14 @@
 get_results_by_target <- function(target_id = NULL, location_id = NULL, year = NULL,
                                   sex_id = NULL, age_group_id = NULL, scenario = NULL) {
   params <- build_params(
-    target_id = target_id,
-    location_id = location_id,
-    year = year,
-    sex_id = sex_id,
-    age_group_id = age_group_id,
-    scenario = scenario
+    target_id = target_id, location_id = location_id, year = year,
+    sex_id = sex_id, age_group_id = age_group_id, scenario = scenario
   )
 
-  # Validate years if provided
   if (!is.null(year)) validate_years(year)
 
   if (length(params) > 0) {
-    result <- call_ihme_api("GetResultsByTarget", !!!params)
+    result <- do.call(call_ihme_api, c(list("GetResultsByTarget"), params))
   } else {
     result <- call_ihme_api("GetResultsByTarget")
   }
@@ -51,19 +46,14 @@ get_results_by_target <- function(target_id = NULL, location_id = NULL, year = N
 get_results_by_indicator <- function(indicator_id = NULL, location_id = NULL, year = NULL,
                                      sex_id = NULL, age_group_id = NULL, scenario = NULL) {
   params <- build_params(
-    indicator_id = indicator_id,
-    location_id = location_id,
-    year = year,
-    sex_id = sex_id,
-    age_group_id = age_group_id,
-    scenario = scenario
+    indicator_id = indicator_id, location_id = location_id, year = year,
+    sex_id = sex_id, age_group_id = age_group_id, scenario = scenario
   )
 
-  # Validate years if provided
   if (!is.null(year)) validate_years(year)
 
   if (length(params) > 0) {
-    result <- call_ihme_api("GetResultsByIndicator", !!!params)
+    result <- do.call(call_ihme_api, c(list("GetResultsByIndicator"), params))
   } else {
     result <- call_ihme_api("GetResultsByIndicator")
   }
@@ -87,19 +77,14 @@ get_results_by_indicator <- function(indicator_id = NULL, location_id = NULL, ye
 get_results_by_location <- function(location_id = NULL, indicator_id = NULL, year = NULL,
                                     sex_id = NULL, age_group_id = NULL, scenario = NULL) {
   params <- build_params(
-    location_id = location_id,
-    indicator_id = indicator_id,
-    year = year,
-    sex_id = sex_id,
-    age_group_id = age_group_id,
-    scenario = scenario
+    location_id = location_id, indicator_id = indicator_id, year = year,
+    sex_id = sex_id, age_group_id = age_group_id, scenario = scenario
   )
 
-  # Validate years if provided
   if (!is.null(year)) validate_years(year)
 
   if (length(params) > 0) {
-    result <- call_ihme_api("GetResultsByLocation", !!!params)
+    result <- do.call(call_ihme_api, c(list("GetResultsByLocation"), params))
   } else {
     result <- call_ihme_api("GetResultsByLocation")
   }
@@ -123,19 +108,14 @@ get_results_by_location <- function(location_id = NULL, indicator_id = NULL, yea
 get_results_by_year <- function(year = NULL, indicator_id = NULL, location_id = NULL,
                                 sex_id = NULL, age_group_id = NULL, scenario = NULL) {
   params <- build_params(
-    year = year,
-    indicator_id = indicator_id,
-    location_id = location_id,
-    sex_id = sex_id,
-    age_group_id = age_group_id,
-    scenario = scenario
+    year = year, indicator_id = indicator_id, location_id = location_id,
+    sex_id = sex_id, age_group_id = age_group_id, scenario = scenario
   )
 
-  # Validate years if provided
   if (!is.null(year)) validate_years(year)
 
   if (length(params) > 0) {
-    result <- call_ihme_api("GetResultsByYear", !!!params)
+    result <- do.call(call_ihme_api, c(list("GetResultsByYear"), params))
   } else {
     result <- call_ihme_api("GetResultsByYear")
   }
@@ -144,9 +124,8 @@ get_results_by_year <- function(year = NULL, indicator_id = NULL, location_id = 
 
 #' Get SDG Data for Multiple Countries and Years
 #'
-#' This is a convenience function that retrieves data for multiple indicators,
-#' countries, and years in a single call. It handles the API requests internally
-#' and combines the results.
+#' Convenience function that retrieves data for multiple indicators, countries,
+#' and years in a single call. Handles API requests internally and combines results.
 #'
 #' @param indicator_ids Vector of indicator IDs
 #' @param location_ids Vector of location IDs (countries)
@@ -154,6 +133,8 @@ get_results_by_year <- function(year = NULL, indicator_id = NULL, location_id = 
 #' @param sex_id Optional sex ID filter
 #' @param age_group_id Optional age group ID filter
 #' @param scenario Optional scenario filter
+#' @param location_batch_size Number of locations to process per batch (default: 50)
+#' @param delay_between_location_batches Delay in seconds between location batches (default: 0.5)
 #'
 #' @return Combined data frame with results
 #' @export
@@ -161,9 +142,9 @@ get_results_by_year <- function(year = NULL, indicator_id = NULL, location_id = 
 #' @examplesIf interactive() && curl::has_internet()
 #' get_sdg_data(indicator_ids = c(1, 2), location_ids = c(102, 6), years = c(2020, 2021))
 get_sdg_data <- function(indicator_ids, location_ids, years, sex_id = NULL,
-                         age_group_id = NULL, scenario = NULL) {
+                         age_group_id = NULL, scenario = NULL,
+                         location_batch_size = 50, delay_between_location_batches = 0.5) {
 
-  # Validate inputs
   if (!is.null(years)) validate_years(years)
 
   if (length(indicator_ids) > 5 || length(location_ids) > 10 || length(years) > 10) {
@@ -172,60 +153,62 @@ get_sdg_data <- function(indicator_ids, location_ids, years, sex_id = NULL,
 
   message(glue::glue("Retrieving data for {length(indicator_ids)} indicators, {length(location_ids)} locations, {length(years)} years"))
 
-  # Get data for each indicator
-  all_data <- purrr::map_dfr(indicator_ids, ~{
-    message(glue::glue("Processing indicator {.x}"))
+  all_data_list <- list()
 
-    get_results_by_indicator(
-      indicator_id = .x,
-      location_id = location_ids,
-      year = years,
-      sex_id = sex_id,
-      age_group_id = age_group_id,
-      scenario = scenario
-    ) |>
-      dplyr::mutate(indicator_id = .x)
-  })
+  for (current_indicator_id in indicator_ids) {
+    message(glue::glue("Processing indicator {current_indicator_id}"))
 
+    location_chunks <- split(location_ids, ceiling(seq_along(location_ids) / location_batch_size))
+
+    for (i in seq_along(location_chunks)) {
+      chunk_of_locations <- location_chunks[[i]]
+
+      message(glue::glue("  - Processing location batch {i}/{length(location_chunks)} ({length(chunk_of_locations)} locations)"))
+
+      call_params <- list(
+        indicator_id = current_indicator_id,
+        location_id = chunk_of_locations,
+        year = years
+      )
+
+      if (!is.null(sex_id)) call_params$sex_id <- sex_id
+      if (!is.null(age_group_id)) call_params$age_group_id <- age_group_id
+      if (!is.null(scenario)) call_params$scenario <- scenario
+
+      chunk_data <- do.call(get_results_by_indicator, call_params)
+
+      if (!"indicator_id" %in% names(chunk_data) && nrow(chunk_data) > 0) {
+        chunk_data$indicator_id <- current_indicator_id
+      }
+
+      all_data_list[[length(all_data_list) + 1]] <- chunk_data
+
+      if (i < length(location_chunks)) {
+        Sys.sleep(delay_between_location_batches)
+      }
+    }
+  }
+
+  all_data <- dplyr::bind_rows(all_data_list)
   message(glue::glue("Retrieved {nrow(all_data)} total observations"))
   all_data
 }
 
 #' Download All IHME Metadata
 #'
-#' Downloads and caches all available metadata from the IHME API including
-#' locations, indicators, targets, goals, age groups, sex categories, and scenarios.
-#' This function downloads ONLY metadata, not the actual SDG indicator data.
-#' Use download_all_ihme_data() to get both metadata and indicator data.
+#' Downloads and caches all available metadata from the IHME API.
+#' Downloads ONLY metadata, not actual SDG indicator data.
 #'
 #' @param file Path to save data (default: "ihme_metadata.rds")
 #' @param force Force redownload, even if file exists and is current (default: FALSE)
 #'
-#' @return List containing all IHME metadata with elements:
-#'   \itemize{
-#'     \item age_groups - Available age group categories
-#'     \item goals - SDG goals
-#'     \item indicators - All available indicators
-#'     \item locations - Countries and regions
-#'     \item scenarios - Projection scenarios
-#'     \item sex_categories - Sex categories (Both, Male, Female)
-#'     \item targets - SDG targets
-#'     \item downloaded - Timestamp of download
-#'     \item version_hash - Hash for cache validation
-#'   }
+#' @return List containing all IHME metadata
 #' @export
 #'
 #' @examplesIf interactive() && curl::has_internet()
-#' # Download all metadata to default file
 #' metadata <- download_all_ihme_metadata()
-#'
-#' # Force fresh download
 #' metadata <- download_all_ihme_metadata(force = TRUE)
-#'
-#' @seealso download_all_ihme_data() to download both metadata and SDG indicator data
 download_all_ihme_metadata <- function(file = "ihme_metadata.rds", force = FALSE) {
-
-  # Check for API key before proceeding
   if (!has_ihme_key()) {
     stop(
       "IHME API key is required to download data.\n",
@@ -235,7 +218,6 @@ download_all_ihme_metadata <- function(file = "ihme_metadata.rds", force = FALSE
     )
   }
 
-  # Check if we can use cached data
   if (!force) {
     cached_data <- check_cached_data(file)
     if (!is.null(cached_data)) {
@@ -245,7 +227,6 @@ download_all_ihme_metadata <- function(file = "ihme_metadata.rds", force = FALSE
 
   message("Downloading IHME metadata...")
 
-  # Get all metadata
   metadata <- list(
     age_groups = get_age_groups(),
     goals = get_goals(),
@@ -258,7 +239,6 @@ download_all_ihme_metadata <- function(file = "ihme_metadata.rds", force = FALSE
     version_hash = get_version_hash()
   )
 
-  # Save metadata
   saveRDS(metadata, file, compress = TRUE)
   message(glue::glue(
     "Saved metadata: {nrow(metadata$locations)} locations, ",
@@ -278,214 +258,144 @@ download_all_ihme_metadata <- function(file = "ihme_metadata.rds", force = FALSE
 #' @param location_ids Vector of location IDs
 #' @param years Vector of years
 #' @param batch_size Number of indicators to process per batch (default: 5)
-#' @param delay_between_batches Delay in seconds between batches (default: 1)
+#' @param delay_between_batches Delay in seconds between indicator batches (default: 1)
 #' @param sex_id Optional sex ID filter
 #' @param age_group_id Optional age group ID filter
+#' @param location_batch_size Number of locations to process per batch (default: 50)
+#' @param delay_between_location_batches Delay in seconds between location batches (default: 0.5)
 #'
 #' @return Combined data frame with all results
 #' @export
 #'
 #' @examplesIf interactive() && curl::has_internet()
-#' # Download data for many indicators in batches
 #' large_dataset <- batch_download_sdg_data(
-#'   indicator_ids = 1:20,
-#'   location_ids = c(102, 6, 101),
-#'   years = c(2020, 2021, 2022),
-#'   batch_size = 3
+#'   indicator_ids = 1:20, location_ids = c(102, 6, 101),
+#'   years = c(2020, 2021, 2022), batch_size = 3
 #' )
 batch_download_sdg_data <- function(indicator_ids, location_ids, years,
                                     batch_size = 5, delay_between_batches = 1,
-                                    sex_id = NULL, age_group_id = NULL) {
+                                    sex_id = NULL, age_group_id = NULL,
+                                    location_batch_size = 50, delay_between_location_batches = 0.5) {
 
-  # Split indicators into batches
   indicator_batches <- split(indicator_ids, ceiling(seq_along(indicator_ids) / batch_size))
-
   message(glue::glue("Processing {length(indicator_ids)} indicators in {length(indicator_batches)} batches"))
 
-  all_data <- purrr::map_dfr(seq_along(indicator_batches), ~{
-    batch_num <- .x
-    batch_indicators <- indicator_batches[[.x]]
+  all_data <- list()
 
+  for (batch_num in seq_along(indicator_batches)) {
+    batch_indicators <- indicator_batches[[batch_num]]
     message(glue::glue("Processing batch {batch_num}/{length(indicator_batches)} ({length(batch_indicators)} indicators)"))
 
-    # Get data for this batch
     batch_data <- get_sdg_data(
-      indicator_ids = batch_indicators,
-      location_ids = location_ids,
-      years = years,
-      sex_id = sex_id,
-      age_group_id = age_group_id
+      indicator_ids = batch_indicators, location_ids = location_ids, years = years,
+      sex_id = sex_id, age_group_id = age_group_id,
+      location_batch_size = location_batch_size,
+      delay_between_location_batches = delay_between_location_batches
     )
 
-    # Add delay between batches (except for the last one)
+    all_data[[batch_num]] <- batch_data
+
     if (batch_num < length(indicator_batches)) {
-      message(glue::glue("Waiting {delay_between_batches} second(s) before next batch..."))
+      message(glue::glue("Waiting {delay_between_batches} second(s) before next indicator batch..."))
       Sys.sleep(delay_between_batches)
     }
+  }
 
-    batch_data
-  })
-
-  message(glue::glue("Batch download complete. Retrieved {nrow(all_data)} total observations"))
-  all_data
+  final_data <- dplyr::bind_rows(all_data)
+  message(glue::glue("Batch download complete. Retrieved {nrow(final_data)} total observations"))
+  final_data
 }
 
-#' Create Comprehensive Country Dataset
+#' Download All IHME Data
 #'
-#' Downloads all available indicators for specified countries and years.
+#' Downloads all available metadata AND SDG indicator data from the IHME API.
 #'
-#' @param country_names Vector of country names to search for
-#' @param years Vector of years
-#' @param include_projections Include projection data (years > current year)
+#' @param file Path to save data (default: "ihme_data.rds")
+#' @param force Force redownload, even if file exists and is current (default: FALSE)
+#' @param years Vector of years to download data for (default: 1990:2030)
+#' @param batch_size Number of indicators to process per batch (default: 3)
+#' @param delay_between_batches Delay in seconds between indicator batches (default: 2)
+#' @param include_projections Include projection years (default: TRUE)
+#' @param location_batch_size Number of locations to process per batch (default: 50)
+#' @param delay_between_location_batches Delay in seconds between location batches (default: 0.5)
 #'
-#' @return Combined dataset with all indicators for specified countries
+#' @return List containing all IHME data
 #' @export
 #'
 #' @examplesIf interactive() && curl::has_internet()
-#' # Get all data for specific countries
-#' country_data <- create_comprehensive_country_dataset(
-#'   country_names = c("United States", "China", "India"),
-#'   years = c(2015, 2020),
-#'   include_projections = FALSE
-#' )
-create_comprehensive_country_dataset <- function(country_names, years,
-                                                 include_projections = TRUE) {
+#' all_data <- download_all_ihme_data()
+#' recent_data <- download_all_ihme_data(years = c(2020, 2025), file = "ihme_recent.rds")
+download_all_ihme_data <- function(file = "ihme_data.rds", force = FALSE,
+                                   years = 1990:2030, batch_size = 3, delay_between_batches = 2,
+                                   include_projections = TRUE,
+                                   location_batch_size = 50, delay_between_location_batches = 0.5) {
 
-  # Find country location IDs
-  all_locations <- get_locations()
-
-  if (!"location_name" %in% names(all_locations)) {
-    stop("Cannot find location names in location data")
+  if (!has_ihme_key()) {
+    stop(
+      "IHME API key is required to download data.\n",
+      "Please set your API key using: set_ihme_key('your_key_here')\n",
+      "Get your API key at: https://api.healthdata.org/sdg/v1/",
+      call. = FALSE
+    )
   }
 
-  matched_countries <- all_locations |>
-    dplyr::filter(location_name %in% country_names)
-
-  if (nrow(matched_countries) == 0) {
-    stop("No countries found matching the provided names")
+  if (!force) {
+    cached_data <- check_cached_data(file)
+    if (!is.null(cached_data)) {
+      return(cached_data)
+    }
   }
 
-  missing_countries <- setdiff(country_names, matched_countries$location_name)
-  if (length(missing_countries) > 0) {
-    message(glue::glue("Could not find: {paste(missing_countries, collapse = ', ')}"))
-  }
-
-  # Get all available indicators
-  all_indicators <- get_indicators()
-
-  if (nrow(all_indicators) == 0 || !"indicator_id" %in% names(all_indicators)) {
-    stop("Could not retrieve indicator information")
-  }
-
-  # Filter years if not including projections
   current_year <- as.numeric(format(Sys.Date(), "%Y"))
   if (!include_projections) {
     years <- years[years <= current_year]
   }
 
+  message("Downloading all IHME data (metadata + SDG results)...")
+  message(glue::glue("Years to download: {paste(years, collapse = ', ')}"))
+
+  message("Step 1/3: Downloading metadata...")
+  metadata <- list(
+    age_groups = get_age_groups(), goals = get_goals(), indicators = get_indicators(),
+    locations = get_locations(), scenarios = get_scenarios(),
+    sex_categories = get_sex_categories(), targets = get_targets()
+  )
+
   message(glue::glue(
-    "Downloading data for {nrow(matched_countries)} countries, ",
-    "{nrow(all_indicators)} indicators, ",
-    "{length(years)} years"
+    "Retrieved metadata: {nrow(metadata$locations)} locations, ",
+    "{nrow(metadata$indicators)} indicators, {nrow(metadata$targets)} targets"
   ))
 
-  # Use batch download for large requests
-  comprehensive_data <- batch_download_sdg_data(
-    indicator_ids = all_indicators$indicator_id,
-    location_ids = matched_countries$location_id,
-    years = years,
-    batch_size = 5,
-    delay_between_batches = 2
+  all_indicator_ids <- metadata$indicators$indicator_id
+  all_location_ids <- metadata$locations$location_id
+
+  message("Step 2/3: Downloading SDG indicator data...")
+  message(glue::glue(
+    "Downloading data for {length(all_indicator_ids)} indicators, ",
+    "{length(all_location_ids)} locations, {length(years)} years"
+  ))
+
+  sdg_data <- batch_download_sdg_data(
+    indicator_ids = all_indicator_ids, location_ids = all_location_ids, years = years,
+    batch_size = batch_size, delay_between_batches = delay_between_batches,
+    location_batch_size = location_batch_size,
+    delay_between_location_batches = delay_between_location_batches
   )
 
-  # Add metadata
-  comprehensive_data |>
-    dplyr::left_join(matched_countries, by = "location_id") |>
-    dplyr::left_join(all_indicators, by = "indicator_id")
-}
+  message("Step 3/3: Packaging and saving data...")
 
-#' Get All SDG Indicators
-#'
-#' Get all indicators across all categories.
-#'
-#' @return Data frame of all indicators
-#' @export
-#'
-#' @examplesIf interactive() && curl::has_internet()
-#' get_all_indicators()
-get_all_indicators <- function() {
-  # Check for API key before proceeding
-  get_ihme_key(error_if_missing = TRUE)
-  get_indicators()
-}
-
-#' Get All Locations
-#'
-#' Get all available locations (countries and regions).
-#'
-#' @return Data frame of all locations
-#' @export
-#'
-#' @examplesIf interactive() && curl::has_internet()
-#' get_all_locations()
-get_all_locations <- function() {
-  # Check for API key before proceeding
-  get_ihme_key(error_if_missing = TRUE)
-  get_locations()
-}
-
-#' Get All SDG Data
-#'
-#' Get all available SDG data for specified parameters. Use with caution as this
-#' can return very large datasets.
-#'
-#' @param location_ids Optional vector of location IDs to filter results
-#' @param indicator_ids Optional vector of indicator IDs to filter results
-#' @param years Optional vector of years to filter results
-#' @param batch_size Number of indicators to process per batch (default: 5)
-#'
-#' @return Data frame of all available SDG data matching the filters
-#' @export
-#'
-#' @examplesIf interactive() && curl::has_internet()
-#' # Get data for specific countries and years
-#' all_data <- get_all_sdg_data(
-#'   location_ids = c(102, 6),
-#'   years = c(2020, 2021),
-#'   batch_size = 3
-#' )
-get_all_sdg_data <- function(location_ids = NULL, indicator_ids = NULL,
-                             years = NULL, batch_size = 5) {
-
-  # Check for API key before proceeding
-  get_ihme_key(error_if_missing = TRUE)
-
-  # Get all indicators if not specified
-  if (is.null(indicator_ids)) {
-    all_indicators <- get_indicators()
-    indicator_ids <- all_indicators$indicator_id
-    message(glue::glue("Retrieved {length(indicator_ids)} indicators"))
-  }
-
-  # Get all locations if not specified
-  if (is.null(location_ids)) {
-    all_locations <- get_locations()
-    location_ids <- all_locations$location_id
-    message(glue::glue("Retrieved {length(location_ids)} locations"))
-  }
-
-  # Default to recent years if not specified
-  if (is.null(years)) {
-    years <- c(2015, 2020, 2025)
-    message("Using default years: 2015, 2020, 2025")
-  }
-
-  # Use batch download for large requests
-  batch_download_sdg_data(
-    indicator_ids = indicator_ids,
-    location_ids = location_ids,
-    years = years,
-    batch_size = batch_size,
-    delay_between_batches = 2
+  all_data <- list(
+    metadata = metadata, sdg_data = sdg_data, downloaded = Sys.time(),
+    version_hash = get_version_hash(), years_included = years
   )
+
+  saveRDS(all_data, file, compress = TRUE)
+  message(glue::glue(
+    "Successfully saved complete IHME dataset:\n",
+    "  - Metadata: {nrow(metadata$locations)} locations, {nrow(metadata$indicators)} indicators\n",
+    "  - SDG Data: {nrow(sdg_data)} observations across {length(years)} years\n",
+    "  - File: {file}"
+  ))
+
+  all_data
 }
